@@ -18,6 +18,13 @@
 ;;   (org-roam--find-file-with-completion-method
 ;;    #'(lambda (completions) (completing-read "File: " completions))))
 
+(defun org-roam--helm-candidate-transformer (candidates source)
+  (let ((prefixed-pattern (propertize
+                           " " 'display
+                           (propertize "[?]" 'face 'helm-ff-prefix))))
+    (cons (concat prefixed-pattern " " helm-pattern)
+          candidates)))
+
 (defun org-roam-find-file-helm ()
   "Find and open an org-roam file using Helm."
   (interactive)
@@ -26,7 +33,7 @@
        (helm :sources (helm-build-sync-source "Title"
                         :candidates (-map #'car completions)
                         :filtered-candidate-transformer
-                          #'(lambda (candidates source) (cons helm-pattern candidates))
+                          #'org-roam--helm-candidate-transformer
                         :fuzzy-match t)
       :buffer "*org-roam titles*"
       :prompt "Title: "))))
@@ -88,8 +95,8 @@ it at point. If PREFIX, downcase the title before insertion."
        (helm :sources (helm-build-sync-source "Title"
                         :candidates (-map #'car completions)
                         :filtered-candidate-transformer
-                          #'(lambda (candidates source)
-                              (cons helm-pattern candidates))
+                        :filtered-candidate-transformer
+                          #'org-roam--helm-candidate-transformer
                         :fuzzy-match t)
              :buffer "*org-roam titles*"
              :prompt "Title: "
