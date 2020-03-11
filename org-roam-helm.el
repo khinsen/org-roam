@@ -25,19 +25,24 @@
     (cons (concat prefixed-pattern " " helm-pattern)
           candidates)))
 
+(defun org-roam--read-title (completions &optional input)
+  (let ((title
+         (helm :sources (helm-build-sync-source "Title"
+                          :candidates (-map #'car completions)
+                          :filtered-candidate-transformer
+                          #'org-roam--helm-candidate-transformer
+                          :fuzzy-match t)
+               :buffer "*org-roam titles*"
+               :prompt "Title: "
+               :input input)))
+    (unless title
+      (keyboard-quit))
+    title))
+
 (defun org-roam-find-file-helm ()
   "Find and open an org-roam file using Helm."
   (interactive)
-  (org-roam--find-file-with-completion-method
-   #'(lambda (completions)
-       (helm :sources (helm-build-sync-source "Title"
-                        :candidates (-map #'car completions)
-                        :filtered-candidate-transformer
-                          #'org-roam--helm-candidate-transformer
-                        :fuzzy-match t)
-      :buffer "*org-roam titles*"
-      :prompt "Title: "))))
-
+  (org-roam--find-file-with-completion-method #'org-roam--read-title))
 
 (defun org-roam--insert-with-completion-method (prefix chooser)
   (let* ((region (and (region-active-p)
@@ -89,15 +94,6 @@
   "Find an org-roam file using Helm, and insert a relative org link to
 it at point. If PREFIX, downcase the title before insertion."
   (interactive "P")
-  (org-roam--insert-with-completion-method
-   prefix
-   #'(lambda (completions region-text)
-       (helm :sources (helm-build-sync-source "Title"
-                        :candidates (-map #'car completions)
-                        :filtered-candidate-transformer
-                        :filtered-candidate-transformer
-                          #'org-roam--helm-candidate-transformer
-                        :fuzzy-match t)
-             :buffer "*org-roam titles*"
-             :prompt "Title: "
-             :input region-text))))
+  (org-roam--insert-with-completion-method 
+   prefix #'org-roam--read-title))
+
