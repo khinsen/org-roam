@@ -1,3 +1,12 @@
+;;
+;; Work in progress
+;;
+;; Instructions: load this file after org-roam initialization
+;; to replace the key bindings for org-roam-find-file and org-roam-insert
+;; by their helm-based equivalents.
+;; Change the key bindings at the end if yours are different from mine!
+;;
+
 (require 'helm)
 
 (defun org-roam--find-file-with-completion-method (chooser)
@@ -96,4 +105,7 @@ it at point. If PREFIX, downcase the title before insertion."
   (interactive "P")
   (org-roam--insert-with-completion-method 
    prefix #'org-roam--read-title))
+
+(define-key org-roam-mode-map "\C-xrf" 'org-roam-find-file-helm)
+(define-key org-mode-map "\C-xri" 'org-roam-insert-helm)
 
