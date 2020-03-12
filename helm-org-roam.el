@@ -8,6 +8,7 @@
 ;;
 
 (require 'helm)
+(require 'org-roam)
 
 (defun org-roam--find-file-with-completion-method (chooser)
   "Find and open an org-roam file using completion method CHOOSER."
@@ -27,19 +28,19 @@
 ;;   (org-roam--find-file-with-completion-method
 ;;    #'(lambda (completions) (completing-read "File: " completions))))
 
-(defun org-roam--helm-candidate-transformer (candidates source)
+(defun helm-org-roam---candidate-transformer (candidates source)
   (let ((prefixed-pattern (propertize
                            " " 'display
                            (propertize "[?]" 'face 'helm-ff-prefix))))
     (cons (concat prefixed-pattern " " helm-pattern)
           candidates)))
 
-(defun org-roam--read-title (completions &optional input)
+(defun helm-org-roam--read-title (completions &optional input)
   (let ((title
          (helm :sources (helm-build-sync-source "Title"
                           :candidates (-map #'car completions)
                           :filtered-candidate-transformer
-                          #'org-roam--helm-candidate-transformer
+                          #'helm-org-roam---candidate-transformer
                           :fuzzy-match t)
                :buffer "*org-roam titles*"
                :prompt "Title: "
@@ -48,10 +49,10 @@
       (keyboard-quit))
     title))
 
-(defun org-roam-find-file-helm ()
+(defun helm-org-roam-find-file ()
   "Find and open an org-roam file using Helm."
   (interactive)
-  (org-roam--find-file-with-completion-method #'org-roam--read-title))
+  (org-roam--find-file-with-completion-method #'helm-org-roam--read-title))
 
 (defun org-roam--insert-with-completion-method (prefix chooser)
   (let* ((region (and (region-active-p)
@@ -99,13 +100,13 @@
 ;;    #'(lambda (completions region-text)
 ;;        (completing-read "File: " completions nil nil region-text))))
 
-(defun org-roam-insert-helm (prefix)
+(defun helm-org-roam-insert (prefix)
   "Find an org-roam file using Helm, and insert a relative org link to
 it at point. If PREFIX, downcase the title before insertion."
   (interactive "P")
   (org-roam--insert-with-completion-method 
-   prefix #'org-roam--read-title))
+   prefix #'helm-org-roam--read-title))
 
-(define-key org-roam-mode-map "\C-xrf" 'org-roam-find-file-helm)
-(define-key org-mode-map "\C-xri" 'org-roam-insert-helm)
+(define-key org-roam-mode-map "\C-xrf" 'helm-org-roam-find-file)
+(define-key org-mode-map "\C-xri" 'helm-org-roam-insert)
 
