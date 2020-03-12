@@ -9,6 +9,7 @@
 
 (require 'helm)
 (require 'org-roam)
+(require 's)
 
 (defun org-roam--find-file-with-completion-method (chooser)
   "Find and open an org-roam file using completion method CHOOSER."
@@ -47,7 +48,7 @@
                :input input)))
     (unless title
       (keyboard-quit))
-    title))
+    (s-trim-left title)))
 
 (defun helm-org-roam-find-file ()
   "Find and open an org-roam file using Helm."
@@ -106,7 +107,3 @@ it at point. If PREFIX, downcase the title before insertion."
   (interactive "P")
   (org-roam--insert-with-completion-method 
    prefix #'helm-org-roam--read-title))
-
-(define-key org-roam-mode-map "\C-xrf" 'helm-org-roam-find-file)
-(define-key org-mode-map "\C-xri" 'helm-org-roam-insert)
-
