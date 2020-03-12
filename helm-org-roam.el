@@ -1,11 +1,39 @@
+;;; helm-org-roam.el --- Helm support for Org-roam
+
+;; Copyright © 2020 Konrad Hinsen
+
+;; Author: Konrad Hinsen
+;; URL: https://github.com/khinsen/org-roam
+;; Keywords: org-mode, roam, helm
+;; Version: 1.0.0-rc1
+;; Package-Requires: ((emacs "26.1") (helm-core "3.5.0"))
+
+;; This file is NOT part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
 ;;
-;; Work in progress
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 ;;
-;; Instructions: load this file after org-roam initialization
-;; to replace the key bindings for org-roam-find-file and org-roam-insert
-;; by their helm-based equivalents.
-;; Change the key bindings at the end if yours are different from mine!
-;;
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+;; Boston, MA 02110-1301, USA.
+
+;;; Commentary:
+
+;; `helm-org-roam' adds `helm' support to Org-roam. It defines
+;; the interactive commands `helm-org-roam-find-file' and
+;; `helm-org-roam-insert' that behave like the standard
+;; `org-roam-find-file' and `org-roam-insert' except for
+;; using `helm' for completion.
+
+;;; Code:
 
 (require 'helm)
 (require 'org-roam)
