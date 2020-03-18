@@ -107,6 +107,12 @@ Has an effect if and only if `org-roam-buffer-position' is `top' or `bottom'."
   :type 'string
   :group 'org-roam)
 
+(defcustom org-roam-buffer-sections '(t t)
+  "The link sections to insert into the `org-roam` buffer."
+  :type '(list (boolean :tag "Backlinks")
+               (boolean :tag "Notes with links in common"))
+  :group 'org-roam)
+
 (defcustom org-roam-encrypt-files nil
   "Whether to encrypt new files.  If true, create files with .org.gpg extension."
   :type 'boolean
@@ -598,9 +604,49 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
                               :order-by (asc file-from)]
                      file))
 
+(defun org-roam--get-common-links (file)
+  "Return the files that have links in common with FILE."
+  (let* ((links (org-roam-sql [:select file-to :from file-links
+                               :where (= file-from $s1)]
+                              file)))
+    (org-roam-sql [:select [file-from, file-to, properties] :from file-links
+                           :where (and (not (= file-from $s1)) (in file-to $v2))
+                           :order-by (asc file-from)]
+                  file (apply #'vconcat links))))
+
 ;;;; Updating the org-roam buffer
+(defun org-roam--insert-link-section (description links)
+  "Insert LINKS into the org-roam buffer as a section
+introduced by DESCRIPTION, which is a cons cell
+whose car is the singular form and whose cdr is the
+plural form."
+  (if links
+      (let ((grouped-links (--sort (length (nth 1 it))
+                                   (--group-by (nth 0 it) links))))
+        (insert (format "\n\n* %d %s\n"
+                        (length links)
+                        (if (equal (length links) 1)
+                            (car description)
+                          (cdr description))))
+        (dolist (group grouped-links)
+          (let ((file-from (car group))
+                (bls (cdr group)))
+            (insert (format "** [[file:%s][%s]]\n"
+                            file-from
+                            (org-roam--get-title-or-slug file-from)))
+            (dolist (backlink bls)
+              (pcase-let ((`(,file-from _ ,props) backlink))
+                (insert (propertize
+                         (s-trim (s-replace "\n" " "
+                                            (plist-get props :content)))
+                         'help-echo "mouse-1: visit linked note"
+                         'file-from file-from
+                         'file-from-point (plist-get props :point)))
+                (insert "\n\n"))))))
+    (insert (format "\n\n* No %s!" (cdr description)))))
+
 (defun org-roam-update (file-path)
-  "Show the backlinks for given org file for file at `FILE-PATH'."
+  "Show the links for given org file for file at `FILE-PATH'."
   (org-roam-db--ensure-built)
   (let* ((source-org-roam-directory org-roam-directory))
     (let ((buffer-title (org-roam--get-title-or-slug file-path)))
@@ -626,27 +672,12 @@ This function hooks into `org-open-at-point' via `org-open-at-point-functions'."
           (setq org-return-follows-link t)
           (insert
            (propertize buffer-title 'font-lock-face 'org-document-title))
-          (if-let* ((backlinks (org-roam--get-backlinks file-path))
-                    (grouped-backlinks (--group-by (nth 0 it) backlinks)))
-              (progn
-                (insert (format "\n\n* %d Backlinks\n"
-                                (length backlinks)))
-                (dolist (group grouped-backlinks)
-                  (let ((file-from (car group))
-                        (bls (cdr group)))
-                    (insert (format "** [[file:%s][%s]]\n"
-                                    file-from
-                                    (org-roam--get-title-or-slug file-from)))
-                    (dolist (backlink bls)
-                      (pcase-let ((`(,file-from _ ,props) backlink))
-                        (insert (propertize
-                                 (s-trim (s-replace "\n" " "
-                                                    (plist-get props :content)))
-                                 'help-echo "mouse-1: visit backlinked note"
-                                 'file-from file-from
-                                 'file-from-point (plist-get props :point)))
-                        (insert "\n\n"))))))
-            (insert "\n\n* No backlinks!")))
+          (when (nth 0 org-roam-buffer-sections)
+            (org-roam--insert-link-section '("backlink" . "backlinks")
+                                           (org-roam--get-backlinks file-path)))
+          (when (nth 1 org-roam-buffer-sections)
+            (org-roam--insert-link-section '("link in common" . "links in common")
+                                           (org-roam--get-common-links file-path))))
         (read-only-mode 1)))))
 
 (cl-defun org-roam--maybe-update-buffer (&key redisplay)
