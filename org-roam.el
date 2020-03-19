@@ -630,19 +630,22 @@ plural form."
                           (cdr description))))
         (dolist (group grouped-links)
           (let ((file-from (car group))
-                (bls (cdr group)))
+                (link-data (-uniq
+                            (-map (pcase-lambda (`(,file-from _ ,props))
+                                    (list (plist-get props :content)
+                                          (plist-get props :point)))
+                                  (cdr group)))))
             (insert (format "** [[file:%s][%s]]\n"
                             file-from
                             (org-roam--get-title-or-slug file-from)))
-            (dolist (backlink bls)
-              (pcase-let ((`(,file-from _ ,props) backlink))
-                (insert (propertize
-                         (s-trim (s-replace "\n" " "
-                                            (plist-get props :content)))
-                         'help-echo "mouse-1: visit linked note"
-                         'file-from file-from
-                         'file-from-point (plist-get props :point)))
-                (insert "\n\n"))))))
+            (dolist (each link-data)
+              (insert (propertize
+                       (s-trim (s-replace "\n" " " (nth 0 each)))
+                       'font-lock-face 'org-roam-backlink
+                       'help-echo "mouse-1: visit linked note"
+                       'file-from file-from
+                       'file-from-point (nth 1 each)))
+              (insert "\n\n")))))
     (insert (format "\n\n* No %s!" (cdr description)))))
 
 (defun org-roam-update (file-path)
